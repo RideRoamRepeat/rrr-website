@@ -1,21 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, useNavigate, BrowserRouter } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Container from './components/Container';
+import DestinationCard from './components/DestinationCard';
+// import FeatureCard from './components/FeatureCard';
 import Footer from './components/Footer';
+import GearCard from './components/GearCard';
+import HomeBanner from './components/HomeBanner';
+import Hero from './components/Hero';
 import Navbar from './components/Navbar';
-import SectionHeading from './components/SectionHeading';
 import RideCard from './components/RideCard';
+import SectionHeading from './components/SectionHeading';
+import Register from './pages/Register';
+import Accessories from './pages/Accessories';
 import RideItinerary from './pages/RideItinerary';
 import Users from './pages/Users';
 import CreateItinerary from './pages/CreateItinerary';
 import SuperUserLogin from './pages/SuperUserLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import DestinationCard from './components/DestinationCard';
-import GearCard from './components/GearCard';
-import HomeBanner from './components/HomeBanner';
-import Hero from './components/Hero';
+
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebase";
 
 
 function HomePage() {
@@ -41,20 +45,17 @@ function HomePage() {
     }
   };
 
-
   useEffect(() => {
+
     const fetchRideFeatures = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "featured_ride"));
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        
-        setFeaturedRide(data);
-      } catch (error) {
-        console.error('Error fetching rides:', error);
-      }
+      const querySnapshot = await getDocs(collection(db, "featured_ride"));
+
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setFeaturedRide(data);
     };
     fetchRideFeatures();
   }, []);
@@ -269,16 +270,18 @@ function HomePage() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/accessories" element={<Accessories />} />
         <Route path="/ride-itinerary" element={<RideItinerary />} />
         <Route path="/users" element={<Users />} />
         <Route path="/create-itinerary" element={<CreateItinerary />} />
         <Route path="/super-user-login" element={<SuperUserLogin />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 

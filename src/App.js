@@ -1,31 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, BrowserRouter } from 'react-router-dom';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
 import Container from './components/Container';
-import DestinationCard from './components/DestinationCard';
-// import FeatureCard from './components/FeatureCard';
 import Footer from './components/Footer';
-import GearCard from './components/GearCard';
-import HomeBanner from './components/HomeBanner';
-import Hero from './components/Hero';
 import Navbar from './components/Navbar';
-import RegistrationForm from './components/RegistrationForm';
-import RideCard from './components/RideCard';
 import SectionHeading from './components/SectionHeading';
-import SubscribeCard from './components/SubscribeCard';
-import Register from './pages/Register';
-import Accessories from './pages/Accessories';
+import RideCard from './components/RideCard';
 import RideItinerary from './pages/RideItinerary';
 import Users from './pages/Users';
 import CreateItinerary from './pages/CreateItinerary';
 import SuperUserLogin from './pages/SuperUserLogin';
 import AdminDashboard from './pages/AdminDashboard';
-
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
+import DestinationCard from './components/DestinationCard';
+import GearCard from './components/GearCard';
+import HomeBanner from './components/HomeBanner';
+import Hero from './components/Hero';
 
 
 function HomePage() {
-  const [users, setUsers] = useState([]);
   const [featuredRide, setFeaturedRide] = useState([]);
   const carouselRef = useRef(null);
   const navigate = useNavigate();
@@ -48,31 +41,21 @@ function HomePage() {
     }
   };
 
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      const querySnapshot = await getDocs(collection(db, "user"));
-
-      const data = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-
-      setUsers(data);
-    };
-
     const fetchRideFeatures = async () => {
-      const querySnapshot = await getDocs(collection(db, "featured_ride"));
-
-      const data = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setFeaturedRide(data);
+      try {
+        const querySnapshot = await getDocs(collection(db, "featured_ride"));
+        const data = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        
+        setFeaturedRide(data);
+      } catch (error) {
+        console.error('Error fetching rides:', error);
+      }
     };
-
-    fetchUsers();
     fetchRideFeatures();
   }, []);
 
@@ -286,18 +269,16 @@ function HomePage() {
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/accessories" element={<Accessories />} />
         <Route path="/ride-itinerary" element={<RideItinerary />} />
         <Route path="/users" element={<Users />} />
         <Route path="/create-itinerary" element={<CreateItinerary />} />
         <Route path="/super-user-login" element={<SuperUserLogin />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 

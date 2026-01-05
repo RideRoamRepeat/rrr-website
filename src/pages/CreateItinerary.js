@@ -37,7 +37,6 @@ export default function CreateItinerary() {
   const [tagInput, setTagInput] = useState('');
   const [requirementInput, setRequirementInput] = useState('');
   const [highlightInput, setHighlightInput] = useState('');
-  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [availableRiders, setAvailableRiders] = useState([]);
   const [selectedRiders, setSelectedRiders] = useState([]);
@@ -123,7 +122,6 @@ export default function CreateItinerary() {
         return;
       }
       
-      setImageFile(file);
       
       // Convert to base64
       const reader = new FileReader();
@@ -138,7 +136,6 @@ export default function CreateItinerary() {
   };
 
   const handleRemoveImage = () => {
-    setImageFile(null);
     setImagePreview('');
     setFormData(prev => ({ ...prev, imageUrl: '' }));
   };
@@ -402,7 +399,7 @@ export default function CreateItinerary() {
                       <div className="relative">
                         <img
                           src={imagePreview}
-                          alt="Cover image preview"
+                          alt="Cover"
                           className="h-48 w-full rounded-xl object-cover"
                         />
                         <button

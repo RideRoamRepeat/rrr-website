@@ -31,7 +31,6 @@ export default function RideItinerary() {
           tags: passedRide.tags,
           imageUrl: passedRide.imageUrl,
           imageAlt: passedRide.imageAlt,
-          description: `Detailed itinerary for ${passedRide.title} in ${passedRide.location}.`,
           itinerary: passedRide?.itinerary || [],
           highlights: passedRide?.highlights || ['Scenic route', 'Great views'],
           requirements: passedRide?.requirements || ['Helmet mandatory', 'Water bottle', 'Basic fitness'],

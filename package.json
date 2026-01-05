@@ -1,5 +1,5 @@
 {
-  "homepage": "https://github.com/RideRoamRepeat/rrr-website",
+  "homepage": "https://rideroamrepeat.netlify.app",
   "name": "rrr-website",
   "version": "0.1.0",
   "private": true,
@@ -20,6 +20,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },

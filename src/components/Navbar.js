@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.svg';
 import Container from './Container';
-import Button from './Button';
 
 export default function Navbar() {
   const location = useLocation();
@@ -15,9 +14,6 @@ export default function Navbar() {
     setIsSuperUser(!!superUserStatus);
   }, []);
 
-  const handleRegisterClick = () => {
-    window.scrollTo(0, 0);
-  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);

@@ -35,7 +35,6 @@ export default function Users() {
     if (!dob) return '';
     const date = new Date(dob);
     const day = date.getDate();
-    const month = date.getMonth() + 1;
     return `${day.toString().padStart(2, '0')}/****`;
   };
 

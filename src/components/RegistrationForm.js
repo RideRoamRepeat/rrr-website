@@ -15,6 +15,10 @@ export default function RegistrationForm() {
     instagramId: '',
     userImage: '',
     
+    // Emergency Contact
+    emergencyContactName: '',
+    emergencyContactNumber: '',
+    
     // Bike Details
     bikeBrandModel: '',
     engineCC: '',
@@ -325,6 +329,43 @@ export default function RegistrationForm() {
                 required
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
                 placeholder="@yourusername"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Contact Section */}
+        <div>
+          <h3 className="mb-4 text-lg font-medium text-white/90">🆘 Emergency Contact</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70">
+                Emergency Contact Name *
+              </label>
+              <input
+                type="text"
+                name="emergencyContactName"
+                value={formData.emergencyContactName}
+                onChange={handleInputChange}
+                required
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
+                placeholder="Enter emergency contact name"
+              />
+            </div>
+            
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70">
+                Emergency Contact Number *
+              </label>
+              <input
+                type="tel"
+                name="emergencyContactNumber"
+                value={formData.emergencyContactNumber}
+                onChange={handleInputChange}
+                required
+                pattern="[0-9]{10}"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
+                placeholder="10-digit mobile number"
               />
             </div>
           </div>

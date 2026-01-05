@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/RideRoamRepeat/rrr-website/static/css/main.fc1ed412.css",
+    "main.js": "/RideRoamRepeat/rrr-website/static/js/main.06a9ac0d.js",
+    "static/js/453.365c155f.chunk.js": "/RideRoamRepeat/rrr-website/static/js/453.365c155f.chunk.js",
+    "static/media/logo.svg": "/RideRoamRepeat/rrr-website/static/media/logo.65aa659a3023b39156604f749115c544.svg",
+    "index.html": "/RideRoamRepeat/rrr-website/index.html",
+    "main.fc1ed412.css.map": "/RideRoamRepeat/rrr-website/static/css/main.fc1ed412.css.map",
+    "main.06a9ac0d.js.map": "/RideRoamRepeat/rrr-website/static/js/main.06a9ac0d.js.map",
+    "453.365c155f.chunk.js.map": "/RideRoamRepeat/rrr-website/static/js/453.365c155f.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.fc1ed412.css",
+    "static/js/main.06a9ac0d.js"
+  ]
+}

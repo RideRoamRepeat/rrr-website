@@ -98,25 +98,23 @@ export default function Navbar() {
             <nav className="py-4 space-y-2">
               {location.pathname === '/' ? (
                 <>
+                <a className="block py-2 text-sm text-white/80 hover:text-white" href="/home" onClick={() => window.scrollTo(0, 0)}>Home</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#about">About</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#rides">Upcoming Rides</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#destinations">Past Rides</a>
-                  <a className="block py-2 text-sm text-white/80 hover:text-white" href="#gear">Gear</a>
-                  <a className="block py-2 text-sm text-white/80 hover:text-white" href="#stories">Stories</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="/users">Riders</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="/register">Register</a>
-                  <a className="block py-2 text-sm text-white/80 hover:text-white" href="/home" onClick={() => window.scrollTo(0, 0)}>Home</a>
+                  
                 </>
               ) : (
                 <>
+                <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/home" onClick={() => window.scrollTo(0, 0)}>Home</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#about">About</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#rides">Upcoming Rides</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#destinations">Past Rides</Link>
-                  <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#gear">Gear</Link>
-                  <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#stories">Stories</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/users">Riders</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/register">Register</Link>
-                  <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/home" onClick={() => window.scrollTo(0, 0)}>Home</Link>
+                  
                 </>
               )}
             </nav>

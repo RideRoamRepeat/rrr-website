@@ -19,6 +19,7 @@ export default function CreateItinerary() {
     distanceKm: '',
     elevationM: '',
     time: '',
+    rideDate: '',
     difficulty: 'Easy',
     type: 'Road',
     imageUrl: '',
@@ -26,7 +27,8 @@ export default function CreateItinerary() {
     description: '',
     meetup: '',
     requirements: [],
-    highlights: []
+    highlights: [],
+    exclusions: []
   });
 
   const [itinerary, setItinerary] = useState([
@@ -37,10 +39,13 @@ export default function CreateItinerary() {
   const [tagInput, setTagInput] = useState('');
   const [requirementInput, setRequirementInput] = useState('');
   const [highlightInput, setHighlightInput] = useState('');
+  const [exclusionInput, setExclusionInput] = useState('');
   const [imagePreview, setImagePreview] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [availableRiders, setAvailableRiders] = useState([]);
   const [selectedRiders, setSelectedRiders] = useState([]);
   const [riderSearch, setRiderSearch] = useState('');
+  const [draggedRequirement, setDraggedRequirement] = useState(null);
 
   useEffect(() => {
     // Check if we're in edit mode and have ride data
@@ -56,6 +61,7 @@ export default function CreateItinerary() {
         distanceKm: rideData.distanceKm?.toString() || '',
         elevationM: rideData.elevationM?.toString() || '',
         time: rideData.time || '',
+        rideDate: rideData.rideDate || '',
         difficulty: rideData.difficulty || 'Easy',
         type: rideData.type || 'Road',
         imageUrl: rideData.imageUrl || '',
@@ -63,7 +69,8 @@ export default function CreateItinerary() {
         description: rideData.description || '',
         meetup: rideData.meetup || '',
         requirements: rideData.requirements || [],
-        highlights: rideData.highlights || []
+        highlights: rideData.highlights || [],
+        exclusions: rideData.exclusions || []
       });
       
       // Set image preview if existing image URL
@@ -116,20 +123,67 @@ export default function CreateItinerary() {
         return;
       }
       
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB.');
-        return;
-      }
+      setIsUploadingImage(true);
       
-      
-      // Convert to base64
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64String = e.target.result;
-        setImagePreview(base64String);
-        // Store base64 in imageUrl field
-        setFormData(prev => ({ ...prev, imageUrl: base64String }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions to reduce file size
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800; // Max dimension for resizing
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress image
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Try different quality levels to get under 500KB
+          let quality = 0.8;
+          let base64Image = canvas.toDataURL('image/jpeg', quality);
+          
+          // Reduce quality if still too large
+          while (base64Image.length > 500 * 1024 && quality > 0.1) {
+            quality -= 0.1;
+            base64Image = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          // If still too large, resize further
+          if (base64Image.length > 500 * 1024) {
+            const smallerSize = 400;
+            canvas.width = smallerSize;
+            canvas.height = smallerSize;
+            ctx.drawImage(img, 0, 0, smallerSize, smallerSize);
+            base64Image = canvas.toDataURL('image/jpeg', 0.5);
+          }
+          
+          setImagePreview(base64Image);
+          // Store base64 in imageUrl field
+          setFormData(prev => ({ ...prev, imageUrl: base64Image }));
+          setIsUploadingImage(false);
+          
+          // Show file size info
+          const fileSizeKB = Math.round(base64Image.length / 1024);
+          console.log(`Image compressed to ${fileSizeKB}KB`);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -204,6 +258,59 @@ export default function CreateItinerary() {
       ...prev,
       requirements: prev.requirements.filter((_, i) => i !== index)
     }));
+  };
+
+  const addExclusion = () => {
+    if (exclusionInput.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        exclusions: [...prev.exclusions, exclusionInput.trim()]
+      }));
+      setExclusionInput('');
+    }
+  };
+
+  const removeExclusion = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      exclusions: prev.exclusions.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Drag and drop handlers for requirements
+  const handleDragStart = (e, index) => {
+    setDraggedRequirement(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedRequirement === null || draggedRequirement === dropIndex) return;
+
+    const draggedItem = formData.requirements[draggedRequirement];
+    const newRequirements = [...formData.requirements];
+    
+    // Remove dragged item
+    newRequirements.splice(draggedRequirement, 1);
+    
+    // Insert at drop position
+    newRequirements.splice(dropIndex, 0, draggedItem);
+    
+    setFormData(prev => ({
+      ...prev,
+      requirements: newRequirements
+    }));
+    
+    setDraggedRequirement(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedRequirement(null);
   };
 
   const addHighlight = () => {
@@ -355,6 +462,20 @@ export default function CreateItinerary() {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-white/80">
+                    Ride Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="rideDate"
+                    value={formData.rideDate}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-white/80">
                     Difficulty
                   </label>
                   <select
@@ -395,7 +516,16 @@ export default function CreateItinerary() {
                   
                   {/* Image Upload Area */}
                   <div className="space-y-4">
-                    {imagePreview && (
+                    {isUploadingImage ? (
+                      <div className="relative">
+                        <div className="h-48 w-full rounded-xl border-2 border-dashed border-white/20 bg-white/5 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="animate-spin h-8 w-8 border-2 border-white/30 border-t-white rounded-full mx-auto mb-4"></div>
+                            <p className="text-sm text-white/60">Processing and compressing image...</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : imagePreview ? (
                       <div className="relative">
                         <img
                           src={imagePreview}
@@ -412,37 +542,44 @@ export default function CreateItinerary() {
                           </svg>
                         </button>
                       </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-white/40 transition">
+                        <svg className="mx-auto h-12 w-12 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
                     )}
                     
                     {/* Always show upload option */}
-                    <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-white/40 transition">
-                      <svg className="mx-auto h-12 w-12 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <div className="mt-4">
-                        <label htmlFor="image-upload" className="cursor-pointer">
-                          <span className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 transition">
-                            {imagePreview ? 'Change Image' : 'Choose Image'}
-                          </span>
-                          <input
-                            id="image-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                        <p className="mt-2 text-xs text-white/60">
-                          PNG, JPG, GIF up to 5MB (Base64)
+                    <div className="text-center">
+                      <label htmlFor="image-upload" className="cursor-pointer">
+                        <span className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                          {isUploadingImage ? 'Processing...' : (imagePreview ? 'Change Image' : 'Choose Image')}
+                        </span>
+                        <input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={isUploadingImage}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="mt-2 text-xs text-white/60">
+                        Will be resized to under 500KB, JPG/PNG/WebP
+                      </p>
+                      {isUploadingImage && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Processing and compressing image...
                         </p>
-                        {imagePreview && (
-                          <p className="mt-1 text-xs text-emerald-400">
-                            Current image will be replaced
-                          </p>
-                        )}
-                      </div>
+                      )}
+                      {imagePreview && !isUploadingImage && (
+                        <p className="mt-1 text-xs text-emerald-400">
+                          Current image will be replaced
+                        </p>
+                      )}
                     </div>
-                    
+                  </div>
                     {/* Fallback URL input */}
                     <div className="text-center">
                       <p className="text-xs text-white/40 mb-2">Or enter image URL:</p>
@@ -457,9 +594,7 @@ export default function CreateItinerary() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
+</div>
             {/* Description */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
               <h3 className="mb-6 text-xl font-semibold">Description</h3>
@@ -656,10 +791,20 @@ export default function CreateItinerary() {
               
               <div className="mb-4 flex flex-wrap gap-2">
                 {formData.requirements.map((requirement, index) => (
-                  <span
+                  <div
                     key={index}
-                    className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/80"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/80 cursor-move transition ${
+                      draggedRequirement === index ? 'opacity-50' : 'hover:bg-white/10'
+                    }`}
                   >
+                    <svg className="h-3 w-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
                     {requirement}
                     <button
                       type="button"
@@ -668,7 +813,7 @@ export default function CreateItinerary() {
                     >
                       ×
                     </button>
-                  </span>
+                  </div>
                 ))}
               </div>
 
@@ -691,6 +836,46 @@ export default function CreateItinerary() {
               </div>
             </div>
 
+            {/* Exclusions */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
+              <h3 className="mb-6 text-xl font-semibold">Exclusions</h3>
+              
+              <div className="mb-4 flex flex-wrap gap-2">
+                {formData.exclusions.map((exclusion, index) => (
+                  <span
+                    key={index}
+                    className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/80"
+                  >
+                    {exclusion}
+                    <button
+                      type="button"
+                      onClick={() => removeExclusion(index)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={exclusionInput}
+                  onChange={(e) => setExclusionInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addExclusion()}
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
+                  placeholder="Add exclusion (e.g., No alcohol during ride)"
+                />
+                <button
+                  type="button"
+                  onClick={addExclusion}
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition hover:bg-white/10"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
 
             {/* Highlights */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-8">

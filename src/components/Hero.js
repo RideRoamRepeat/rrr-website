@@ -30,27 +30,26 @@ export default function Hero() {
 
             <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
               Ride. Roam. Repeat.
-              <span className="block text-white/70">Find routes you’ll actually want to do twice.</span>
+              {/* <span className="block text-white/70">Bike Rides & Travel — Built for the Weekend.</span> */}
             </h1>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/70">
-              Curated cycling routes, cafe stops, packing checklists, and travel stories. Built for early
-              starts, long climbs, and sunsets that make you forget the headwind.
+              From misty mountain roads to sunrise highways, we plan rides that balance adventure, comfort, and unforgettable memories. Whether it’s a short weekend escape or a long scenic ride, every journey is thoughtfully curated for real riders.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button as="a" href="#rides">Explore rides</Button>
-              <Button as="a" href="#stories" variant="secondary">
+              {/* <Button as="a" href="#stories" variant="secondary">
                 Read travel stories
               </Button>
               <Button as="a" href="#gear" variant="ghost" className="sm:ml-2">
                 View gear list
-              </Button>
+              </Button> */}
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <Stat label="Rides logged" value="48" />
+            <Stat label="Rides logged" value="0" />
             <Stat label="Best season" value="Oct–Feb" />
             <Stat label="Coffee stops" value="Uncountable" />
             <div className="sm:col-span-3">

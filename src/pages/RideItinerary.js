@@ -20,6 +20,9 @@ export default function RideItinerary() {
     if (location.state?.selectedRide) {
       const passedRide = location.state.selectedRide;
 
+      console.log("LJHVDJHVKJLDVJKVDKJVDKJVKJDVK ", JSON.stringify(passedRide));
+      
+
       
       const newRide = {
           id: Date.now(), // temporary ID
@@ -37,13 +40,11 @@ export default function RideItinerary() {
           meetup: passedRide?.meetup,
           difficulty: passedRide?.difficulty,
           description: passedRide?.description,
-          selectedRiders: passedRide?.selectedRiders || []
+          selectedRiders: passedRide?.selectedRiders || [],
+          rideDate: passedRide?.rideDate,
+          exclusions: passedRide?.exclusions || []
         };
         setSelectedRide(newRide);
-
-
-        console.log("KJGDJKHVKJVDKJHVDKJVKJD selectedRiders ",passedRide);
-        
         
         // Fetch user details for selected riders
         if (passedRide?.selectedRiders && passedRide.selectedRiders.length > 0) {
@@ -63,9 +64,9 @@ export default function RideItinerary() {
         ...doc.data()
       }));
       
-      // Filter users to only include selected riders
+      // Filter users to only include selected riders who are approved
       const selectedUsers = allUsers.filter(user => 
-        selectedRiderIds.includes(user.id)
+        selectedRiderIds.includes(user.id) && user.status === 'approved'
       );
       
       setParticipants(selectedUsers);
@@ -84,6 +85,7 @@ export default function RideItinerary() {
     console.log('Closing modal');
     setIsModalOpen(false);
   };
+  
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -122,7 +124,17 @@ export default function RideItinerary() {
                     </div>
                     <div className="mt-6">
                       <h1 className="mb-2 text-3xl font-bold">{selectedRide.name}</h1>
-                      <p className="mb-4 text-lg text-white/80">{selectedRide.location}</p>
+                      <p className="mb-2 text-lg text-white/80">{selectedRide.location}</p>
+                      {selectedRide.rideDate && (
+                        <p className="mb-4 text-lg text-emerald-400 font-medium">
+                          � {new Date(selectedRide.rideDate).toLocaleDateString('en-US', { 
+                            weekday: 'short',
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      )}
                       <p className="text-white/70">{selectedRide.description}</p>
                     </div>
                   </div>
@@ -161,7 +173,9 @@ export default function RideItinerary() {
                           <div className="flex-1">
                             <div className="mb-2 flex items-center gap-4">
                               <span className="font-semibold">{stop.time}</span>
-                              <span className="text-sm text-white/60">{stop.distance}</span>
+                              <span className="text-sm text-white/60">
+                                {stop.distance && stop.distance.toLowerCase().includes('km') ? stop?.distance?.toUpperCase() : `${stop.distance} KM`}
+                              </span>
                             </div>
                             <h3 className="mb-1 font-medium">{stop.location}</h3>
                             <p className="text-sm text-white/70">{stop.activity}</p>
@@ -201,6 +215,20 @@ export default function RideItinerary() {
                       ))}
                     </ul>
                   </div>
+
+                  {/* Exclusions */}
+                  {selectedRide.exclusions && selectedRide.exclusions.length > 0 && (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                      <h3 className="mb-4 text-lg font-semibold">Exclusions</h3>
+                      <ul className="space-y-2">
+                        {selectedRide.exclusions.map((exclusion, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="text-sm text-white/80">{exclusion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Highlights */}
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-6">

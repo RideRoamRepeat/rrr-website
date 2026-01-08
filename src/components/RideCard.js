@@ -11,6 +11,7 @@ export default function RideCard({
     distanceKm,
     elevationM,
     time,
+    rideDate,
     imageUrl,
     tags,
     itinerary,
@@ -19,8 +20,12 @@ export default function RideCard({
     requirements,
     highlights,
     description,
-    selectedRiders
+    selectedRiders,
+    exclusions
   } = rideData;
+
+  console.log("KJBVJHFDVKJVHDKJDVKJLDVHKDVDKV ", exclusions);
+  
 
   const handleClick = () => {
     const rideDataToPass = {
@@ -30,6 +35,7 @@ export default function RideCard({
       distanceKm: distanceKm || 0,
       elevationM: elevationM || 0,
       time: time || 'Unknown',
+      rideDate: rideDate || '',
       imageUrl,
       imageAlt: "Coastal road at sunrise",
       tags: tags || [],
@@ -39,7 +45,8 @@ export default function RideCard({
       requirements: requirements || [],
       highlights: highlights || tags || [],
       description: description || 'Unknown',
-      selectedRiders: selectedRiders || []
+      selectedRiders: selectedRiders || [],
+      exclusions: exclusions || []
     };
     handleNavigate(rideDataToPass);
   };
@@ -67,10 +74,10 @@ export default function RideCard({
             <h3 className="text-base font-semibold leading-snug">{name}</h3>
             <div className="mt-1 text-sm text-white/60">{location}</div>
           </div>
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-400/80 to-sky-400/80 opacity-90 transition group-hover:opacity-100" />
+         
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3 text-xs">
+        <div className="mt-4 grid grid-cols-4 gap-3 text-xs">
           <div className="rounded-2xl bg-white/5 p-3">
             <div className="text-white/60">Distance</div>
             <div className="mt-1 font-semibold">{distanceKm} km</div>
@@ -83,15 +90,31 @@ export default function RideCard({
             <div className="text-white/60">Time</div>
             <div className="mt-1 font-semibold">{time}</div>
           </div>
+          {rideDate && (
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-400/10 to-sky-400/10 border border-emerald-400/20 p-3">
+              <div className="text-emerald-400/80">Date</div>
+              <div className="mt-1 font-semibold text-emerald-300">
+                {new Date(rideDate).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {tags && tags.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
-            {(Array.isArray(tags) ? tags : [tags]).map((t, index) => (
+            {(Array.isArray(tags) ? tags : [tags]).slice(0, 5).map((t, index) => (
               <span key={index} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
                 {t}
               </span>
             ))}
+            {(Array.isArray(tags) ? tags : [tags]).length > 5 && (
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+                ...
+              </span>
+            )}
           </div>
         ) : null}
       </div>

@@ -7,6 +7,7 @@ export default function DestinationCard({
   highlights = [],
   imageUrl,
   imageAlt,
+  pastRides = []
 }) {
   return (
     <article className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
@@ -27,8 +28,16 @@ export default function DestinationCard({
           <div>
             <h3 className="text-base font-semibold">{name}</h3>
             <div className="mt-1 text-sm text-white/60">{vibe}</div>
+            <div className="mt-1 text-sm text-white/70">{bestTime}</div>
           </div>
-          <div className="rounded-2xl bg-white/5 px-3 py-2 text-xs text-white/70">{bestTime}</div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => window.location.href = `/ride-itinerary`}
+              className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-emerald-400 hover:bg-emerald-500/20 transition"
+            >
+              View Details
+            </button>
+          </div>
         </div>
 
         {highlights.length ? (

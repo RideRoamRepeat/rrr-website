@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Container from '../components/Container';
 import Footer from '../components/Footer';
@@ -13,6 +13,10 @@ export default function SuperUserLogin() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -103,7 +107,7 @@ export default function SuperUserLogin() {
                     onChange={handleInputChange}
                     required
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
-                    placeholder="admin@rideroamrepeat.com"
+                    placeholder="Email Id"
                   />
                 </div>
 

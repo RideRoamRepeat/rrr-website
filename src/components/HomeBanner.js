@@ -27,11 +27,10 @@ export default function HomeBanner() {
               New season rides are live
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Bike rides + travel, curated for weekends.
+              Bike Rides & Travel — Built for the Weekend.
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-white/65">
-              Route guides, destination notes, and gear checklists — designed to get you out the door
-              faster.
+              Curated motorcycle rides, scenic routes, and travel experiences designed for riders who live for the road.
             </p>
           </div>
 
@@ -39,9 +38,9 @@ export default function HomeBanner() {
             <Button as="a" href="#rides">
               Browse rides
             </Button>
-            <Button as="a" href="#subscribe" variant="secondary">
+            {/* <Button as="a" href="#subscribe" variant="secondary">
               Subscribe
-            </Button>
+            </Button> */}
           </div>
         </div>
       </Container>

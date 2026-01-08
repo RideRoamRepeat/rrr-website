@@ -56,9 +56,9 @@ export default function ParticipantsModal({ isOpen, onClose, participants }) {
                   </div>
 
                   {/* Action Button */}
-                  <button className="flex-shrink-0 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition">
+                  {/* <button className="flex-shrink-0 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition">
                     View
-                  </button>
+                  </button> */}
                 </div>
               ))}
             </div>

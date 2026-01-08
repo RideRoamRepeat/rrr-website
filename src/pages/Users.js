@@ -47,7 +47,9 @@ export default function Users() {
           ...doc.data()
         }));
         
-        setUsers(data);
+        // Only show approved users
+        const approvedUsers = data.filter(user => user.status === 'approved');
+        setUsers(approvedUsers);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
@@ -63,7 +65,7 @@ export default function Users() {
     user.riderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.bikeBrandModel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).filter(user => user.status === 'approved'); // Double filter for safety
 
   if (loading) {
     return (

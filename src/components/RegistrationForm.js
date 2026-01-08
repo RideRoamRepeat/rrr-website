@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Button from './Button';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function RegistrationForm() {
+export default function RegistrationForm({ editMode = false, initialData = null }) {
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: '',
@@ -24,16 +24,34 @@ export default function RegistrationForm() {
     engineCC: '',
     registrationNumber: '',
     bikeType: '',
-    modifications: '',
-    hasModifications: '',
-    
-    // License & Documents
-    licenseNumber: '',
-    licenseExpiry: '',
-    insuranceValidTill: ''
+    modifications: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Populate form with initial data if in edit mode
+  useEffect(() => {
+    if (editMode && initialData) {
+      setFormData({
+        fullName: initialData.fullName || '',
+        riderName: initialData.riderName || '',
+        dateOfBirth: initialData.dateOfBirth || '',
+        bloodGroup: initialData.bloodGroup || '',
+        mobileNumber: initialData.mobileNumber || '',
+        email: initialData.email || '',
+        instagramId: initialData.instagramId || '',
+        userImage: initialData.userImage || '',
+        emergencyContactName: initialData.emergencyContactName || '',
+        emergencyContactNumber: initialData.emergencyContactNumber || '',
+        bikeBrandModel: initialData.bikeBrandModel || '',
+        engineCC: initialData.engineCC || '',
+        registrationNumber: initialData.registrationNumber || '',
+        bikeType: initialData.bikeType || '',
+        modifications: initialData.modifications || ''
+      });
+    }
+  }, [editMode, initialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -50,24 +68,74 @@ export default function RegistrationForm() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
-        return;
-      }
-
       // Check file type
       if (!file.type.startsWith('image/')) {
         alert('Please upload an image file');
         return;
       }
 
+      setIsUploadingImage(true);
+      
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({
-          ...prev,
-          userImage: reader.result // This will be base64 string
-        }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions to reduce file size
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800; // Max dimension for resizing
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress image
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Try different quality levels to get under 500KB
+          let quality = 0.8;
+          let base64Image = canvas.toDataURL('image/jpeg', quality);
+          
+          // Reduce quality if still too large
+          while (base64Image.length > 500 * 1024 && quality > 0.1) {
+            quality -= 0.1;
+            base64Image = canvas.toDataURL('image/jpeg', quality);
+          }
+          
+          // If still too large, resize further
+          if (base64Image.length > 500 * 1024) {
+            const smallerSize = 400;
+            canvas.width = smallerSize;
+            canvas.height = smallerSize;
+            ctx.drawImage(img, 0, 0, smallerSize, smallerSize);
+            base64Image = canvas.toDataURL('image/jpeg', 0.5);
+          }
+          
+          setFormData(prev => ({
+            ...prev,
+            userImage: base64Image
+          }));
+          setIsUploadingImage(false);
+          
+          // Show file size info
+          const fileSizeKB = Math.round(base64Image.length / 1024);
+          console.log(`Image compressed to ${fileSizeKB}KB`);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -131,52 +199,148 @@ export default function RegistrationForm() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    try {
-      // Check for existing email, Instagram ID, and mobile number
-      const validation = await checkExistingUser(formData.email, formData.instagramId, formData.mobileNumber);
-      
-      if (validation.exists) {
-        alert(validation.message);
-        setIsSubmitting(false);
-        return;
-      }
+    // Validate required fields
+    const requiredFields = {
+      fullName: 'Full Name',
+      riderName: 'Rider Name', 
+      dateOfBirth: 'Date of Birth',
+      bloodGroup: 'Blood Group',
+      mobileNumber: 'Mobile Number',
+      email: 'Email',
+      instagramId: 'Instagram ID',
+      emergencyContactName: 'Emergency Contact Name',
+      emergencyContactNumber: 'Emergency Contact Number',
+      bikeBrandModel: 'Bike Brand & Model',
+      engineCC: 'Engine CC',
+      registrationNumber: 'Registration Number',
+      bikeType: 'Bike Type'
+    };
 
-      // Save registration data to Firebase Firestore
-      const docRef = await addDoc(collection(db, "user"), {
-        ...formData,
-        email: formData.email.toLowerCase(), // Store email in lowercase
-        instagramId: formData.instagramId.toLowerCase(), // Store Instagram ID in lowercase
-        createdAt: serverTimestamp(),
-        status: "registered"
-      });
+    // Check for empty required fields
+    const emptyFields = [];
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field] || formData[field].trim() === '') {
+        emptyFields.push(label);
+      }
+    }
+
+    if (emptyFields.length > 0) {
+      alert(`Please fill in all required fields:\n${emptyFields.join('\n')}`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate mobile number (10 digits)
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(formData.mobileNumber)) {
+      alert('Please enter a valid 10-digit mobile number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate emergency contact number (10 digits)
+    if (!mobileRegex.test(formData.emergencyContactNumber)) {
+      alert('Please enter a valid 10-digit emergency contact number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate Instagram ID (content exists, not format)
+    if (!formData.instagramId || formData.instagramId.trim() === '') {
+      alert('Please enter Instagram ID');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate engine CC (numeric)
+    if (isNaN(formData.engineCC) || formData.engineCC <= 0) {
+      alert('Engine CC must be a positive number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate bike type
+    const validBikeTypes = ['Cruiser', 'Sports', 'Tourer', 'Adventure', 'Commuter', 'Off-road', 'Street', 'Other'];
+    if (!validBikeTypes.includes(formData.bikeType)) {
+      alert('Please select a valid bike type');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate blood group
+    const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    if (!validBloodGroups.includes(formData.bloodGroup)) {
+      alert('Please select a valid blood group');
+      setIsSubmitting(false);
+      return;
+    }
+    
+    try {
+      if (editMode) {
+        // Update existing user
+        await updateDoc(doc(db, "user", initialData.id), {
+          ...formData,
+          email: formData.email.toLowerCase(),
+          instagramId: formData.instagramId.toLowerCase(),
+          updatedAt: serverTimestamp()
+        });
+        
+        console.log("User updated with ID: ", initialData.id);
+        alert('User profile updated successfully!');
+      } else {
+        // Check for existing email, Instagram ID, and mobile number for new registration
+        const validation = await checkExistingUser(formData.email, formData.instagramId, formData.mobileNumber);
+        
+        if (validation.exists) {
+          alert(validation.message);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Save registration data to Firebase Firestore
+        const docRef = await addDoc(collection(db, "user"), {
+          ...formData,
+          email: formData.email.toLowerCase(), // Store email in lowercase
+          instagramId: formData.instagramId.toLowerCase(), // Store Instagram ID in lowercase
+          createdAt: serverTimestamp(),
+          status: "pending" 
+        });
+        
+        console.log("Document written with ID: ", docRef.id);
+        alert('Registration submitted successfully! Your ID: ' + docRef.id + '\n\nYour account is pending approval by admin. You will be able to access the website once approved.');
+      }
       
-      console.log("Document written with ID: ", docRef.id);
-      
-      // Clear form after successful submission
-      setFormData({
-        fullName: '',
-        riderName: '',
-        dateOfBirth: '',
-        bloodGroup: '',
-        mobileNumber: '',
-        email: '',
-        instagramId: '',
-        userImage: '',
-        bikeBrandModel: '',
-        engineCC: '',
-        registrationNumber: '',
-        bikeType: '',
-        modifications: '',
-        hasModifications: '',
-        licenseNumber: '',
-        licenseExpiry: '',
-        insuranceValidTill: ''
-      });
-      
-      alert('Registration submitted successfully! Your ID: ' + docRef.id);
+      // Clear form after successful submission (only for new registration)
+      if (!editMode) {
+        setFormData({
+          fullName: '',
+          riderName: '',
+          dateOfBirth: '',
+          bloodGroup: '',
+          mobileNumber: '',
+          email: '',
+          instagramId: '',
+          userImage: '',
+          emergencyContactName: '',
+          emergencyContactNumber: '',
+          bikeBrandModel: '',
+          engineCC: '',
+          registrationNumber: '',
+          bikeType: '',
+          modifications: ''
+        });
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Registration failed. Please try again. Error: ' + error.message);
+      alert(editMode ? 'Update failed. Please try again.' : 'Registration failed. Please try again. Error: ' + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +348,9 @@ export default function RegistrationForm() {
 
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8">
-      <h2 className="mb-8 text-2xl font-semibold">Rider Registration</h2>
+      <h2 className="mb-8 text-2xl font-semibold">
+        {editMode ? 'Edit Rider Profile' : 'Rider Registration'}
+      </h2>
       
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Personal Details Section */}
@@ -196,7 +362,11 @@ export default function RegistrationForm() {
                 Profile Photo
               </label>
               <div className="flex items-center gap-4">
-                {formData.userImage ? (
+                {isUploadingImage ? (
+                  <div className="h-20 w-20 flex items-center justify-center rounded-full border-2 border-dashed border-white/20 bg-white/5">
+                    <div className="animate-spin h-6 w-6 border-2 border-white/30 border-t-white rounded-full"></div>
+                  </div>
+                ) : formData.userImage ? (
                   <div className="h-20 w-20 overflow-hidden rounded-full">
                     <img
                       src={formData.userImage}
@@ -216,11 +386,17 @@ export default function RegistrationForm() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white/70 hover:file:bg-white/20"
+                    disabled={isUploadingImage}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white/70 hover:file:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <p className="mt-1 text-xs text-white/50">
-                    Max size: 5MB, JPG/PNG/WebP
+                    Will be resized to under 500KB, JPG/PNG/WebP
                   </p>
+                  {isUploadingImage && (
+                    <p className="mt-1 text-xs text-emerald-400">
+                      Processing and compressing image...
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -437,91 +613,27 @@ export default function RegistrationForm() {
               >
                 <option value="">Select bike type</option>
                 <option value="Street">Street</option>
-                <option value="ADV">ADV</option>
+                <option value="Sports">Sports</option>
+                <option value="Tourer">Tourer</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Commuter">Commuter</option>
                 <option value="Cruiser">Cruiser</option>
                 <option value="Off-road">Off-road</option>
+                 <option value="Other">Other</option>
               </select>
             </div>
             
             <div>
               <label className="mb-2 block text-sm font-medium text-white/70">
-                Any Modifications *
-              </label>
-              <select
-                name="hasModifications"
-                value={formData.hasModifications}
-                onChange={handleInputChange}
-                required
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
-              >
-                <option value="">Select</option>
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-            
-            {formData.hasModifications === 'Yes' && (
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white/70">
-                  Describe Modifications
-                </label>
-                <input
-                  type="text"
-                  name="modifications"
-                  value={formData.modifications}
-                  onChange={handleInputChange}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
-                  placeholder="e.g., Exhaust, Suspension, etc."
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* License & Documents Section */}
-        <div>
-          <h3 className="mb-4 text-lg font-medium text-white/90">🪪 License & Documents</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white/70">
-                Driving License Number *
+                Modifications (Optional)
               </label>
               <input
                 type="text"
-                name="licenseNumber"
-                value={formData.licenseNumber}
+                name="modifications"
+                value={formData.modifications}
                 onChange={handleInputChange}
-                required
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
-                placeholder="License number"
-              />
-            </div>
-            
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white/70">
-                License Expiry Date *
-              </label>
-              <input
-                type="date"
-                name="licenseExpiry"
-                value={formData.licenseExpiry}
-                onChange={handleInputChange}
-                required
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
-              />
-            </div>
-            
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white/70">
-                Bike Insurance Valid Till *
-              </label>
-              <input
-                type="date"
-                name="insuranceValidTill"
-                value={formData.insuranceValidTill}
-                onChange={handleInputChange}
-                required
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white transition focus:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10"
+                placeholder="e.g., Exhaust, Suspension, etc."
               />
             </div>
           </div>
@@ -532,7 +644,7 @@ export default function RegistrationForm() {
             Clear Form
           </Button>
           <Button type="submit" disabled={isSubmitting} onClick={handleSubmit}>
-            {isSubmitting ? 'Submitting...' : 'Register'}
+            {isSubmitting ? (editMode ? 'Updating...' : 'Submitting...') : (editMode ? 'Update Profile' : 'Register')}
           </Button>
         </div>
       </form>

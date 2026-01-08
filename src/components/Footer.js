@@ -16,17 +16,19 @@ export default function Footer() {
         <div className="flex flex-wrap gap-4 text-sm text-white/70">
           {location.pathname === '/' ? (
             <>
+              <a className="hover:text-white" href="#about">About</a>
               <a className="hover:text-white" href="#rides">Rides</a>
               <a className="hover:text-white" href="#destinations">Destinations</a>
-              <a className="hover:text-white" href="#gear">Gear</a>
-              <a className="hover:text-white" href="#subscribe">Subscribe</a>
+              {/* <a className="hover:text-white" href="#gear">Gear</a> */}
+              {/* <a className="hover:text-white" href="#subscribe">Subscribe</a> */}
             </>
           ) : (
             <>
+              <Link className="hover:text-white" to="/#about">About</Link>
               <Link className="hover:text-white" to="/#rides">Rides</Link>
               <Link className="hover:text-white" to="/#destinations">Destinations</Link>
-              <Link className="hover:text-white" to="/#gear">Gear</Link>
-              <Link className="hover:text-white" to="/#subscribe">Subscribe</Link>
+              {/* <Link className="hover:text-white" to="/#gear">Gear</Link> */}
+              {/* <Link className="hover:text-white" to="/#subscribe">Subscribe</Link> */}
             </>
           )}
           <Link className="hover:text-white text-amber-400" to="/super-user-login">Admin</Link>

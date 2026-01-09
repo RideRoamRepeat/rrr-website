@@ -11,6 +11,8 @@ import RideItinerary from './pages/RideItinerary';
 import Users from './pages/Users';
 import CreateItinerary from './pages/CreateItinerary';
 import SuperUserLogin from './pages/SuperUserLogin';
+import UserLogin from './pages/UserLogin';
+import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import HomeBanner from './components/HomeBanner';
 import Hero from './components/Hero';
@@ -75,7 +77,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen w-full bg-zinc-950 text-white overflow-x-hidden">
       <Navbar />
       <HomeBanner />
       <main>
@@ -301,6 +303,8 @@ function App() {
         <Route path="/users" element={<Users />} />
         <Route path="/create-itinerary" element={<CreateItinerary />} />
         <Route path="/super-user-login" element={<SuperUserLogin />} />
+        <Route path="/user-login" element={<UserLogin />} />
+        <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>

@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Container from './Container';
 
 export default function Footer() {
   const location = useLocation();
+  const [isSuperUser, setIsSuperUser] = useState(false);
+
+  useEffect(() => {
+    // Check if user is authenticated as super user
+    const checkSuperUserStatus = () => {
+      const superUserStatus = localStorage.getItem('isSuperLogin');
+      console.log('Footer: Checking super user status:', superUserStatus);
+      setIsSuperUser(superUserStatus);
+    };
+
+    // Check immediately
+    checkSuperUserStatus();
+    
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'isSuperLogin') {
+        checkSuperUserStatus();
+      }
+    };
+    
+    // Listen for custom auth change events
+    const handleAuthChange = () => {
+      checkSuperUserStatus();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('authChange', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authChange', handleAuthChange);
+    };
+  }, []);
+
+  console.log("JHVKJDSCVJCSJCSJKC isSuperUser ", isSuperUser);
+  
   
   return (
     <footer className="border-t border-white/10 py-10">
@@ -31,7 +67,9 @@ export default function Footer() {
               {/* <Link className="hover:text-white" to="/#subscribe">Subscribe</Link> */}
             </>
           )}
-          <Link className="hover:text-white text-amber-400" to="/super-user-login">Admin</Link>
+          {(isSuperUser === 'true') && (
+            <Link className="hover:text-white text-amber-400" to="/super-user-login">Admin</Link>
+          )}
           <Link className="hover:text-white" to="/register">Register</Link>
         </div>
 

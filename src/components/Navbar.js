@@ -6,12 +6,31 @@ import Container from './Container';
 export default function Navbar() {
   const location = useLocation();
   const [isSuperUser, setIsSuperUser] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated as super user
     const superUserStatus = localStorage.getItem('isSuperUser');
     setIsSuperUser(!!superUserStatus);
+    
+    // Check if regular user is logged in
+    const loggedInStatus = localStorage.getItem('isLoggedIn');
+    setIsLoggedIn(!!loggedInStatus);
+    
+    // Listen for custom auth change events
+    const handleAuthChange = () => {
+      const newSuperUserStatus = localStorage.getItem('isSuperUser');
+      const newLoggedInStatus = localStorage.getItem('isLoggedIn');
+      setIsSuperUser(!!newSuperUserStatus);
+      setIsLoggedIn(!!newLoggedInStatus);
+    };
+    
+    window.addEventListener('authChange', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange);
+    };
   }, []);
 
 
@@ -42,26 +61,40 @@ export default function Navbar() {
         <nav className="hidden items-center gap-6 text-sm text-white/80 md:flex">
           {location.pathname === '/' ? (
             <>
-            <Link className="hover:text-white" to="/home" onClick={() => window.scrollTo(0, 0)}>Home</Link>
+            <Link className="hover:text-white" to="/" onClick={() => window.scrollTo(0, 0)}>Home</Link>
               <a className="hover:text-white" href="#about">About</a>
               <a className="hover:text-white" href="#rides">Upcoming Rides</a>
               {/* <a className="hover:text-white" href="#destinations">Past Rides</a> */}
               {/* <a className="hover:text-white" href="#gear">Gear</a> */}
               {/* <a className="hover:text-white" href="#stories">Stories</a> */}
               <a className="hover:text-white" href="/users">Riders</a>
-              <a className="hover:text-white" href="/register">Register</a>
+              {isLoggedIn ? (
+                <Link className="hover:text-white" to="/user-profile">My Profile</Link>
+              ) : (
+                <>
+                  <a className="hover:text-white" href="/register">Register</a>
+                  <a className="hover:text-white" href="/user-login">Login</a>
+                </>
+              )}
               
             </>
           ) : (
             <>
-            <Link className="hover:text-white" to="/home" onClick={() => window.scrollTo(0, 0)}>Home</Link>
+            <Link className="hover:text-white" to="/" onClick={() => window.scrollTo(0, 0)}>Home</Link>
               <Link className="hover:text-white" to="/#about">About</Link>
               <Link className="hover:text-white" to="/#rides">Upcoming Rides</Link>
               {/* <Link className="hover:text-white" to="/#destinations">Past Rides</Link> */}
               {/* <Link className="hover:text-white" to="/#gear">Gear</Link> */}
               {/* <Link className="hover:text-white" to="/#stories">Stories</Link> */}
               <Link className="hover:text-white" to="/users">Riders</Link>
-              <Link className="hover:text-white" to="/register">Register</Link>
+              {isLoggedIn ? (
+                <Link className="hover:text-white" to="/user-profile">My Profile</Link>
+              ) : (
+                <>
+                  <Link className="hover:text-white" to="/register">Register</Link>
+                  <Link className="hover:text-white" to="/user-login">Login</Link>
+                </>
+              )}
               
             </>
           )}
@@ -98,22 +131,36 @@ export default function Navbar() {
             <nav className="py-4 space-y-2">
               {location.pathname === '/' ? (
                 <>
-                <a className="block py-2 text-sm text-white/80 hover:text-white" href="/home" onClick={() => window.scrollTo(0, 0)}>Home</a>
+                <a className="block py-2 text-sm text-white/80 hover:text-white" href="/" onClick={() => window.scrollTo(0, 0)}>Home</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#about">About</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#rides">Upcoming Rides</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="#destinations">Past Rides</a>
                   <a className="block py-2 text-sm text-white/80 hover:text-white" href="/users">Riders</a>
-                  <a className="block py-2 text-sm text-white/80 hover:text-white" href="/register">Register</a>
+                  {isLoggedIn ? (
+                    <a className="block py-2 text-sm text-white/80 hover:text-white" href="/user-profile">My Profile</a>
+                  ) : (
+                    <>
+                      <a className="block py-2 text-sm text-white/80 hover:text-white" href="/register">Register</a>
+                      <a className="block py-2 text-sm text-white/80 hover:text-white" href="/user-login">Login</a>
+                    </>
+                  )}
                   
                 </>
               ) : (
                 <>
-                <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/home" onClick={() => window.scrollTo(0, 0)}>Home</Link>
+                <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/" onClick={() => window.scrollTo(0, 0)}>Home</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#about">About</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#rides">Upcoming Rides</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/#destinations">Past Rides</Link>
                   <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/users">Riders</Link>
-                  <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/register">Register</Link>
+                  {isLoggedIn ? (
+                    <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/user-profile">My Profile</Link>
+                  ) : (
+                    <>
+                      <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/register">Register</Link>
+                      <Link className="block py-2 text-sm text-white/80 hover:text-white" to="/user-login">Login</Link>
+                    </>
+                  )}
                   
                 </>
               )}

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from './Button';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function RegistrationForm({ editMode = false, initialData = null }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: '',
@@ -295,6 +297,7 @@ export default function RegistrationForm({ editMode = false, initialData = null 
         
         console.log("User updated with ID: ", initialData.id);
         alert('User profile updated successfully!');
+        navigate('/user-profile');
       } else {
         // Check for existing email, Instagram ID, and mobile number for new registration
         const validation = await checkExistingUser(formData.email, formData.instagramId, formData.mobileNumber);
@@ -306,16 +309,21 @@ export default function RegistrationForm({ editMode = false, initialData = null 
         }
 
         // Save registration data to Firebase Firestore
+        // Generate dummy password
+        const dummyPassword = formData.riderName.toLowerCase().replace(/\s+/g, '') + Math.floor(1000 + Math.random() * 9000);
+        
         const docRef = await addDoc(collection(db, "user"), {
           ...formData,
           email: formData.email.toLowerCase(), // Store email in lowercase
           instagramId: formData.instagramId.toLowerCase(), // Store Instagram ID in lowercase
+          password: dummyPassword, // Add dummy password
+          isSuperAdmin: false, // Set isSuperAdmin to false
           createdAt: serverTimestamp(),
           status: "pending" 
         });
         
         console.log("Document written with ID: ", docRef.id);
-        alert('Registration submitted successfully! Your ID: ' + docRef.id + '\n\nYour account is pending approval by admin. You will be able to access the website once approved.');
+        alert('Registration submitted successfully! Your ID: ' + docRef.id + '\n\nYour temporary password: ' + dummyPassword + '\n\nYour account is pending approval by admin. You will be able to access the website once approved.');
       }
       
       // Clear form after successful submission (only for new registration)

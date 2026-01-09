@@ -7,7 +7,7 @@ import SectionHeading from '../components/SectionHeading';
 import { query, where, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 
-export default function SuperUserLogin() {
+export default function UserLogin() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -51,20 +51,22 @@ export default function SuperUserLogin() {
       const userDoc = userSnapshot.docs[0];
       const userData = userDoc.data();
       
-      // Check if user is super admin and password matches
-      if (userData.isSuperAdmin && userData.password === formData.password) {
-        // Store session (in production, use secure tokens)
-        localStorage.setItem('isSuperUser', 'true');
-        localStorage.setItem('isSuperLogin', 'true');
-        localStorage.setItem('superUserEmail', formData.email);
+      // Check if user is approved and password matches
+      // if (userData.status !== 'approved') {
+      //   setError('Your account is pending approval. Please contact admin.');
+      //   return;
+      // }
+      
+      if (userData.password === formData.password) {
+        // Store session
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('isSuperLogin', userData.isSuperAdmin ? 'true' : 'false');
+        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem('userId', userDoc.id);
+        localStorage.setItem('userName', userData.fullName || userData.riderName);
         
-        // Dispatch custom event to notify other components
-        window.dispatchEvent(new CustomEvent('authChange', { detail: { type: 'superUserLogin' } }));
-        
-        alert('Login successful! Welcome Super User.');
-        navigate('/admin-dashboard');
-      } else if (!userData.isSuperAdmin) {
-        setError('Access denied. You do not have super admin privileges.');
+        alert('Login successful! Welcome back.');
+        navigate('/user-profile');
       } else {
         setError('Invalid credentials. Please check your email and password.');
       }
@@ -85,21 +87,21 @@ export default function SuperUserLogin() {
           <div className="mx-auto max-w-md">
             <div className="mb-12 text-center">
               <SectionHeading
-                id="super-user-login"
-                eyebrow="Admin Access"
-                title="Super User Login"
-                description="Secure access for system administrators and content managers."
+                id="user-login"
+                eyebrow="Member Access"
+                title="User Login"
+                description="Access your rider profile and manage your account details."
               />
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-              {/* Security Badge */}
+              {/* User Badge */}
               <div className="mb-6 flex items-center justify-center">
-                <div className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-400">
+                <div className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-blue-400">
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="text-sm font-medium">Secure Authentication</span>
+                  <span className="text-sm font-medium">Member Login</span>
                 </div>
               </div>
 
@@ -149,27 +151,41 @@ export default function SuperUserLogin() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500 px-6 py-3 text-white font-semibold transition hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-xl border border-blue-500/30 bg-blue-500 px-6 py-3 text-white font-semibold transition hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Authenticating...' : 'Login as Super User'}
+                  {loading ? 'Authenticating...' : 'Login'}
                 </button>
               </form>
 
-              {/* Security Notice */}
+              {/* Help Notice */}
               <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
                 <div className="flex items-start gap-3">
                   <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm text-white/60">
-                    <p className="font-medium text-white/80 mb-1">Security Notice</p>
-                    <p>This is a restricted area for authorized personnel only. All login attempts are logged and monitored.</p>
+                    <p className="font-medium text-white/80 mb-1">Need Help?</p>
+                    <p>Use your registered email and the password provided during registration. Contact admin if you've forgotten your password.</p>
                   </div>
                 </div>
               </div>
 
-              {/* Back to Home */}
-              <div className="mt-6 text-center">
+              {/* Navigation Links */}
+              <div className="mt-6 text-center space-y-2">
+                <button
+                  onClick={() => navigate('/register')}
+                  className="text-sm text-white/60 hover:text-white transition"
+                >
+                  New User? Register Here
+                </button>
+                <br />
+                <button
+                  onClick={() => navigate('/super-user-login')}
+                  className="text-sm text-white/60 hover:text-white transition"
+                >
+                  Admin Access →
+                </button>
+                <br />
                 <button
                   onClick={() => navigate('/')}
                   className="text-sm text-white/60 hover:text-white transition"

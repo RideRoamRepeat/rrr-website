@@ -209,7 +209,6 @@ export default function RideItinerary() {
                     <ul className="space-y-2">
                       {selectedRide.requirements.map((req, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <span className="mt-1 text-emerald-400">•</span>
                           <span className="text-sm text-white/80">{req}</span>
                         </li>
                       ))}
@@ -223,7 +222,7 @@ export default function RideItinerary() {
                       <ul className="space-y-2">
                         {selectedRide.exclusions.map((exclusion, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <span className="text-sm text-white/80">{exclusion}</span>
+                            <span className="text-sm text-white/80">{`❌ ${exclusion}`}</span>
                           </li>
                         ))}
                       </ul>
@@ -235,8 +234,8 @@ export default function RideItinerary() {
                     <h3 className="mb-4 text-lg font-semibold">Route Highlights</h3>
                     <ul className="space-y-2">
                       {selectedRide.highlights.map((highlight, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="mt-1 text-emerald-400">•</span>
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="text-emerald-400">🗺️</span>
                           <span className="text-sm text-white/80">{highlight}</span>
                         </li>
                       ))}

@@ -23,10 +23,7 @@ export default function RideCard({
     selectedRiders,
     exclusions
   } = rideData;
-
-  console.log("KJBVJHFDVKJVHDKJDVKJLDVHKDVDKV ", exclusions);
   
-
   const handleClick = () => {
     const rideDataToPass = {
       id,

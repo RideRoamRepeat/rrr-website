@@ -1,33 +1,43 @@
 import { useEffect } from 'react';
 import { analytics } from '../firebase';
 
-// Custom hook for Firebase Analytics
+// Custom hook for Firebase Analytics - completely safe implementation
 export const useAnalytics = () => {
   useEffect(() => {
-    // Log page view
-    analytics.logEvent('page_view', {
-      page_title: document.title,
-      page_location: window.location.href
-    });
+    // Safe page view logging - won't crash if analytics fails
+    try {
+      if (analytics && typeof analytics.logEvent === 'function') {
+        analytics.logEvent('page_view', {
+          page_title: document?.title || 'Unknown',
+          page_location: window?.location?.href || 'Unknown'
+        });
+      }
+    } catch (error) {
+      console.warn('Page view tracking failed:', error);
+    }
   }, []);
 
-  // Function to log custom events
+  // Safe event logging functions
   const logEvent = (eventName, parameters = {}) => {
-    analytics.logEvent(eventName, parameters);
+    try {
+      if (analytics && typeof analytics.logEvent === 'function' && eventName) {
+        analytics.logEvent(eventName, parameters);
+      }
+    } catch (error) {
+      console.warn('Event logging failed:', error);
+    }
   };
 
-  // Function to log user interactions
   const logUserInteraction = (action, category = 'User Interaction') => {
-    analytics.logEvent('user_interaction', {
+    logEvent('user_interaction', {
       action,
       category,
       timestamp: new Date().toISOString()
     });
   };
 
-  // Function to track button clicks
   const logButtonClick = (buttonName, location = '', parameters = {}) => {
-    analytics.logEvent('button_click', {
+    logEvent('button_click', {
       button_name: buttonName,
       location,
       timestamp: new Date().toISOString(),
@@ -35,9 +45,8 @@ export const useAnalytics = () => {
     });
   };
 
-  // Function to track API calls
   const logApiCall = (apiName, method = 'GET', success = true, error = null) => {
-    analytics.logEvent('api_call', {
+    logEvent('api_call', {
       api_name: apiName,
       method,
       success,
@@ -46,35 +55,31 @@ export const useAnalytics = () => {
     });
   };
 
-  // Function to track login events
   const logLogin = (userType, success = true) => {
-    analytics.logEvent('login', {
+    logEvent('login', {
       user_type: userType,
       success,
       method: 'email_password'
     });
   };
 
-  // Function to track form submissions
   const logFormSubmission = (formName, success = true) => {
-    analytics.logEvent('form_submission', {
+    logEvent('form_submission', {
       form_name: formName,
       success
     });
   };
 
-  // Function to track navigation
   const logNavigation = (destination, parameters = {}) => {
-    analytics.logEvent('navigation', {
+    logEvent('navigation', {
       destination,
       timestamp: new Date().toISOString(),
       ...parameters
     });
   };
 
-  // Function to track data fetching
   const logDataFetch = (dataType, success = true, count = 0) => {
-    analytics.logEvent('data_fetch', {
+    logEvent('data_fetch', {
       data_type: dataType,
       success,
       count,

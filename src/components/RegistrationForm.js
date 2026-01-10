@@ -206,6 +206,82 @@ export default function RegistrationForm({ editMode = false, initialData = null 
     // Track form submission button click
     logButtonClick('registration_submit', editMode ? 'edit_profile_form' : 'registration_form');
 
+    // Validation logic moved inside handleSubmit
+    const requiredFields = {
+      fullName: 'Full Name',
+      riderName: 'Rider Name', 
+      dateOfBirth: 'Date of Birth',
+      bloodGroup: 'Blood Group',
+      mobileNumber: 'Mobile Number',
+      email: 'Email',
+      instagramId: 'Instagram ID',
+      emergencyContactName: 'Emergency Contact Name',
+      emergencyContactNumber: 'Emergency Contact Number',
+      bikeBrandModel: 'Bike Brand & Model',
+      engineCC: 'Engine CC',
+      registrationNumber: 'Registration Number',
+      bikeType: 'Bike Type'
+    };
+
+    // Check for empty required fields
+    const emptyFields = [];
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field] || formData[field].trim() === '') {
+        emptyFields.push(label);
+      }
+    }
+
+    if (emptyFields.length > 0) {
+      alert(`Please fill in all required fields:\n${emptyFields.join('\n')}`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('Please enter a valid email address');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate mobile number (10 digits)
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(formData.mobileNumber)) {
+      alert('Please enter a valid 10-digit mobile number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate emergency contact number (10 digits)
+    if (!mobileRegex.test(formData.emergencyContactNumber)) {
+      alert('Please enter a valid 10-digit emergency contact number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate Instagram ID
+    if (!formData.instagramId || formData.instagramId.trim() === '') {
+      alert('Please enter Instagram ID');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate engine CC (numeric)
+    if (isNaN(formData.engineCC) || formData.engineCC <= 0) {
+      alert('Engine CC must be a positive number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate bike type
+    const validBikeTypes = ['Cruiser', 'Sports', 'Tourer', 'Adventure', 'Commuter', 'Off-road', 'Street', 'Other'];
+    if (!validBikeTypes.includes(formData.bikeType)) {
+      alert('Please select a valid bike type');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       if (editMode) {
         // Track API call for profile update
@@ -298,81 +374,6 @@ export default function RegistrationForm({ editMode = false, initialData = null 
       setIsSubmitting(false);
     }
   };
-
-  const requiredFields = {
-    fullName: 'Full Name',
-    riderName: 'Rider Name', 
-    dateOfBirth: 'Date of Birth',
-    bloodGroup: 'Blood Group',
-    mobileNumber: 'Mobile Number',
-    email: 'Email',
-    instagramId: 'Instagram ID',
-    emergencyContactName: 'Emergency Contact Name',
-    emergencyContactNumber: 'Emergency Contact Number',
-    bikeBrandModel: 'Bike Brand & Model',
-    engineCC: 'Engine CC',
-    registrationNumber: 'Registration Number',
-    bikeType: 'Bike Type'
-  };
-
-  // Check for empty required fields
-  const emptyFields = [];
-  for (const [field, label] of Object.entries(requiredFields)) {
-    if (!formData[field] || formData[field].trim() === '') {
-      emptyFields.push(label);
-    }
-  }
-
-  if (emptyFields.length > 0) {
-    alert(`Please fill in all required fields:\n${emptyFields.join('\n')}`);
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(formData.email)) {
-    alert('Please enter a valid email address');
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate mobile number (10 digits)
-  const mobileRegex = /^[0-9]{10}$/;
-  if (!mobileRegex.test(formData.mobileNumber)) {
-    alert('Please enter a valid 10-digit mobile number');
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate emergency contact number (10 digits)
-  if (!mobileRegex.test(formData.emergencyContactNumber)) {
-    alert('Please enter a valid 10-digit emergency contact number');
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate Instagram ID (content exists, not format)
-  if (!formData.instagramId || formData.instagramId.trim() === '') {
-    alert('Please enter Instagram ID');
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate engine CC (numeric)
-  if (isNaN(formData.engineCC) || formData.engineCC <= 0) {
-    alert('Engine CC must be a positive number');
-    setIsSubmitting(false);
-    return;
-  }
-
-  // Validate bike type
-  const validBikeTypes = ['Cruiser', 'Sports', 'Tourer', 'Adventure', 'Commuter', 'Off-road', 'Street', 'Other'];
-  if (!validBikeTypes.includes(formData.bikeType)) {
-    alert('Please select a valid bike type');
-    setIsSubmitting(false);
-    return;
-  }
 
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8">

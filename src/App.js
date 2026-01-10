@@ -18,10 +18,12 @@ import HomeBanner from './components/HomeBanner';
 import Hero from './components/Hero';
 import Register from './pages/Register';
 import Accessories from './pages/Accessories';
+import { useAnalytics } from './hooks/useAnalytics';
 
 function HomePage() {
   const [featuredRide, setFeaturedRide] = useState([]);
   const [pastRides, setPastRides] = useState([]);
+  const { logEvent, logNavigation } = useAnalytics();
   // const carouselRef = useRef(null);
   const navigate = useNavigate();
 
@@ -54,9 +56,10 @@ function HomePage() {
       }));
 
       setFeaturedRide(data);
+      logEvent('featured_rides_loaded', { count: data.length });
     };
     fetchRideFeatures();
-  }, []);
+  }, [logEvent]);
 
   useEffect(() => {
     const fetchPastRides = async () => {
@@ -68,11 +71,13 @@ function HomePage() {
       }));
 
       setPastRides(data);
+      logEvent('past_rides_loaded', { count: data.length });
     };
     fetchPastRides();
-  }, []);
+  }, [logEvent]);
 
   const handleNavigate = (rideData) => {
+    logNavigation('ride_itinerary', { ride_id: rideData.id, ride_name: rideData.title });
     navigate('/ride-itinerary', { state: { selectedRide: rideData } });
   };
 

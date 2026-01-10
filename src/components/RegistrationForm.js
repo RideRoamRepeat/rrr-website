@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Button from './Button';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 export default function RegistrationForm({ editMode = false, initialData = null }) {
   const navigate = useNavigate();
+  const { logFormSubmission, logUserInteraction, logButtonClick, logApiCall } = useAnalytics();
   const [formData, setFormData] = useState({
     // Personal Details
     fullName: '',
@@ -200,93 +202,15 @@ export default function RegistrationForm({ editMode = false, initialData = null 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Validate required fields
-    const requiredFields = {
-      fullName: 'Full Name',
-      riderName: 'Rider Name', 
-      dateOfBirth: 'Date of Birth',
-      bloodGroup: 'Blood Group',
-      mobileNumber: 'Mobile Number',
-      email: 'Email',
-      instagramId: 'Instagram ID',
-      emergencyContactName: 'Emergency Contact Name',
-      emergencyContactNumber: 'Emergency Contact Number',
-      bikeBrandModel: 'Bike Brand & Model',
-      engineCC: 'Engine CC',
-      registrationNumber: 'Registration Number',
-      bikeType: 'Bike Type'
-    };
 
-    // Check for empty required fields
-    const emptyFields = [];
-    for (const [field, label] of Object.entries(requiredFields)) {
-      if (!formData[field] || formData[field].trim() === '') {
-        emptyFields.push(label);
-      }
-    }
+    // Track form submission button click
+    logButtonClick('registration_submit', editMode ? 'edit_profile_form' : 'registration_form');
 
-    if (emptyFields.length > 0) {
-      alert(`Please fill in all required fields:\n${emptyFields.join('\n')}`);
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      alert('Please enter a valid email address');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate mobile number (10 digits)
-    const mobileRegex = /^[0-9]{10}$/;
-    if (!mobileRegex.test(formData.mobileNumber)) {
-      alert('Please enter a valid 10-digit mobile number');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate emergency contact number (10 digits)
-    if (!mobileRegex.test(formData.emergencyContactNumber)) {
-      alert('Please enter a valid 10-digit emergency contact number');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate Instagram ID (content exists, not format)
-    if (!formData.instagramId || formData.instagramId.trim() === '') {
-      alert('Please enter Instagram ID');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate engine CC (numeric)
-    if (isNaN(formData.engineCC) || formData.engineCC <= 0) {
-      alert('Engine CC must be a positive number');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate bike type
-    const validBikeTypes = ['Cruiser', 'Sports', 'Tourer', 'Adventure', 'Commuter', 'Off-road', 'Street', 'Other'];
-    if (!validBikeTypes.includes(formData.bikeType)) {
-      alert('Please select a valid bike type');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Validate blood group
-    const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-    if (!validBloodGroups.includes(formData.bloodGroup)) {
-      alert('Please select a valid blood group');
-      setIsSubmitting(false);
-      return;
-    }
-    
     try {
       if (editMode) {
+        // Track API call for profile update
+        logApiCall('user_profile_update', 'PUT', true);
+
         // Update existing user
         await updateDoc(doc(db, "user", initialData.id), {
           ...formData,
@@ -296,21 +220,34 @@ export default function RegistrationForm({ editMode = false, initialData = null 
         });
         
         console.log("User updated with ID: ", initialData.id);
+        
+        // Track successful profile update
+        logFormSubmission('profile_update', true);
+        logUserInteraction('profile_updated', 'Profile Management');
+        logApiCall('user_profile_update', 'PUT', true);
+        
         alert('User profile updated successfully!');
         navigate('/user-profile');
       } else {
+        // Check for existing user
+        logApiCall('user_validation_check', 'GET', true);
+
         // Check for existing email, Instagram ID, and mobile number for new registration
         const validation = await checkExistingUser(formData.email, formData.instagramId, formData.mobileNumber);
         
         if (validation.exists) {
           alert(validation.message);
           setIsSubmitting(false);
+          // Track validation failure
+          logApiCall('user_validation_check', 'GET', false, new Error(validation.message));
           return;
         }
 
-        // Save registration data to Firebase Firestore
+        // Track API call for new user creation
+        logApiCall('user_registration', 'POST', true);
+
         // Generate dummy password
-        const dummyPassword = formData.riderName.toLowerCase().replace(/\s+/g, '') + Math.floor(1000 + Math.random() * 9000);
+        const dummyPassword = 'Temp@123';
         
         const docRef = await addDoc(collection(db, "user"), {
           ...formData,
@@ -323,7 +260,13 @@ export default function RegistrationForm({ editMode = false, initialData = null 
         });
         
         console.log("Document written with ID: ", docRef.id);
-        alert('Registration submitted successfully! Your ID: ' + docRef.id + '\n\nYour temporary password: ' + dummyPassword + '\n\nYour account is pending approval by admin. You will be able to access the website once approved.');
+        
+        // Track successful registration
+        logFormSubmission('user_registration', true);
+        logUserInteraction('account_created', 'User Registration');
+        logApiCall('user_registration', 'POST', true);
+        
+        alert('Registration submitted successfully! Your ID: ' + docRef.id + '\n\nYour temporary password: ' + dummyPassword + '\n\nYour account is pending approval by admin. You will be able to access website once approved.');
       }
       
       // Clear form after successful submission (only for new registration)
@@ -347,12 +290,89 @@ export default function RegistrationForm({ editMode = false, initialData = null 
         });
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert(editMode ? 'Update failed. Please try again.' : 'Registration failed. Please try again. Error: ' + error.message);
+      console.error("Error submitting form: ", error);
+      alert('Error submitting form. Please try again.');
+      // Track API error
+      logApiCall(editMode ? 'user_profile_update' : 'user_registration', editMode ? 'PUT' : 'POST', false, error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const requiredFields = {
+    fullName: 'Full Name',
+    riderName: 'Rider Name', 
+    dateOfBirth: 'Date of Birth',
+    bloodGroup: 'Blood Group',
+    mobileNumber: 'Mobile Number',
+    email: 'Email',
+    instagramId: 'Instagram ID',
+    emergencyContactName: 'Emergency Contact Name',
+    emergencyContactNumber: 'Emergency Contact Number',
+    bikeBrandModel: 'Bike Brand & Model',
+    engineCC: 'Engine CC',
+    registrationNumber: 'Registration Number',
+    bikeType: 'Bike Type'
+  };
+
+  // Check for empty required fields
+  const emptyFields = [];
+  for (const [field, label] of Object.entries(requiredFields)) {
+    if (!formData[field] || formData[field].trim() === '') {
+      emptyFields.push(label);
+    }
+  }
+
+  if (emptyFields.length > 0) {
+    alert(`Please fill in all required fields:\n${emptyFields.join('\n')}`);
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.email)) {
+    alert('Please enter a valid email address');
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate mobile number (10 digits)
+  const mobileRegex = /^[0-9]{10}$/;
+  if (!mobileRegex.test(formData.mobileNumber)) {
+    alert('Please enter a valid 10-digit mobile number');
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate emergency contact number (10 digits)
+  if (!mobileRegex.test(formData.emergencyContactNumber)) {
+    alert('Please enter a valid 10-digit emergency contact number');
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate Instagram ID (content exists, not format)
+  if (!formData.instagramId || formData.instagramId.trim() === '') {
+    alert('Please enter Instagram ID');
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate engine CC (numeric)
+  if (isNaN(formData.engineCC) || formData.engineCC <= 0) {
+    alert('Engine CC must be a positive number');
+    setIsSubmitting(false);
+    return;
+  }
+
+  // Validate bike type
+  const validBikeTypes = ['Cruiser', 'Sports', 'Tourer', 'Adventure', 'Commuter', 'Off-road', 'Street', 'Other'];
+  if (!validBikeTypes.includes(formData.bikeType)) {
+    alert('Please select a valid bike type');
+    setIsSubmitting(false);
+    return;
+  }
 
   return (
     <div className="mx-auto max-w-2xl rounded-3xl border border-white/10 bg-white/5 p-8">

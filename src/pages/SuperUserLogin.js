@@ -6,9 +6,11 @@ import Navbar from '../components/Navbar';
 import SectionHeading from '../components/SectionHeading';
 import { query, where, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 export default function SuperUserLogin() {
   const navigate = useNavigate();
+  const { logLogin, logFormSubmission, logButtonClick, logApiCall, logNavigation } = useAnalytics();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -34,21 +36,24 @@ export default function SuperUserLogin() {
     setLoading(true);
     setError('');
 
+    // Track login button click
+    logButtonClick('super_user_login_submit', 'super_user_login_form');
+
     try {
-      // Query user collection to find user by email
-      const userQuery = query(
-        collection(db, "user"),
-        where("email", "==", formData.email.toLowerCase())
-      );
-      
-      const userSnapshot = await getDocs(userQuery);
-      
-      if (userSnapshot.empty) {
+      // Track API call start
+      logApiCall('super_user_login', 'POST', true);
+
+      const q = query(collection(db, "user"), where("email", "==", formData.email.toLowerCase()));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
         setError('User not found. Please check your email.');
+        // Track failed API call
+        logApiCall('super_user_login', 'POST', false, new Error('User not found'));
         return;
       }
       
-      const userDoc = userSnapshot.docs[0];
+      const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
       
       // Check if user is super admin and password matches
@@ -58,6 +63,12 @@ export default function SuperUserLogin() {
         localStorage.setItem('isSuperLogin', 'true');
         localStorage.setItem('superUserEmail', formData.email);
         
+        // Track successful super admin login
+        logLogin('super_admin', true);
+        logFormSubmission('super_user_login', true);
+        logApiCall('super_user_login', 'POST', true);
+        logNavigation('/admin-dashboard', { user_id: userDoc.id });
+        
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('authChange', { detail: { type: 'superUserLogin' } }));
         
@@ -65,12 +76,22 @@ export default function SuperUserLogin() {
         navigate('/admin-dashboard');
       } else if (!userData.isSuperAdmin) {
         setError('Access denied. You do not have super admin privileges.');
+        // Track access denied
+        logLogin('super_admin', false);
+        logFormSubmission('super_user_login', false);
+        logApiCall('super_user_login', 'POST', false, new Error('Access denied - not super admin'));
       } else {
         setError('Invalid credentials. Please check your email and password.');
+        // Track failed login
+        logLogin('super_admin', false);
+        logFormSubmission('super_user_login', false);
+        logApiCall('super_user_login', 'POST', false, new Error('Invalid credentials'));
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Login failed. Please try again.');
+      // Track API error
+      logApiCall('super_user_login', 'POST', false, error);
     } finally {
       setLoading(false);
     }
@@ -168,10 +189,36 @@ export default function SuperUserLogin() {
                 </div>
               </div>
 
-              {/* Back to Home */}
+              {/* Navigation Links */}
+              <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+                <button
+                  onClick={() => {
+                    logButtonClick('register_link', 'super_user_login_form');
+                    logNavigation('/register');
+                    navigate('/register');
+                  }}
+                  className="text-blue-400 hover:text-blue-300 transition"
+                >
+                  Create Account
+                </button>
+                <span className="text-white/40">•</span>
+                <button
+                  onClick={() => {
+                    logButtonClick('user_login_link', 'super_user_login_form');
+                    logNavigation('/user-login');
+                    navigate('/user-login');
+                  }}
+                  className="text-blue-400 hover:text-blue-300 transition"
+                >
+                  User Login
+                </button>
+              </div>
               <div className="mt-6 text-center">
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => {
+                    logButtonClick('back_to_home', 'super_user_login_form');
+                    navigate('/');
+                  }}
                   className="text-sm text-white/60 hover:text-white transition"
                 >
                   ← Back to Home

@@ -6,9 +6,11 @@ import Navbar from '../components/Navbar';
 import SectionHeading from '../components/SectionHeading';
 import { query, where, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAnalytics } from '../hooks/useAnalytics';
 
 export default function UserLogin() {
   const navigate = useNavigate();
+  const { logLogin, logFormSubmission, logButtonClick, logApiCall, logNavigation } = useAnalytics();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -34,28 +36,33 @@ export default function UserLogin() {
     setLoading(true);
     setError('');
 
+    // Track login button click
+    logButtonClick('user_login_submit', 'user_login_form');
+
     try {
-      // Query user collection to find user by email
-      const userQuery = query(
-        collection(db, "user"),
-        where("email", "==", formData.email.toLowerCase())
-      );
-      
-      const userSnapshot = await getDocs(userQuery);
-      
-      if (userSnapshot.empty) {
+      // Track API call start
+      logApiCall('user_login', 'POST', true);
+
+      const q = query(collection(db, "user"), where("email", "==", formData.email.toLowerCase()));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
         setError('User not found. Please check your email.');
+        // Track failed API call
+        logApiCall('user_login', 'POST', false, new Error('User not found'));
         return;
       }
       
-      const userDoc = userSnapshot.docs[0];
+      const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
       
       // Check if user is approved and password matches
-      // if (userData.status !== 'approved') {
-      //   setError('Your account is pending approval. Please contact admin.');
-      //   return;
-      // }
+      if (userData.status !== 'approved') {
+        setError('Your account is pending approval. Please contact admin.');
+        // Track failed API call
+        logApiCall('user_login', 'POST', false, new Error('Account not approved'));
+        return;
+      }
       
       if (userData.password === formData.password) {
         // Store session
@@ -65,14 +72,26 @@ export default function UserLogin() {
         localStorage.setItem('userId', userDoc.id);
         localStorage.setItem('userName', userData.fullName || userData.riderName);
         
+        // Track successful login
+        logLogin('regular_user', true);
+        logFormSubmission('user_login', true);
+        logApiCall('user_login', 'POST', true);
+        logNavigation('/user-profile', { user_id: userDoc.id });
+        
         alert('Login successful! Welcome back.');
         navigate('/user-profile');
       } else {
         setError('Invalid credentials. Please check your email and password.');
+        // Track failed login
+        logLogin('regular_user', false);
+        logFormSubmission('user_login', false);
+        logApiCall('user_login', 'POST', false, new Error('Invalid credentials'));
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Login failed. Please try again.');
+      // Track API error
+      logApiCall('user_login', 'POST', false, error);
     } finally {
       setLoading(false);
     }
@@ -171,23 +190,35 @@ export default function UserLogin() {
               </div>
 
               {/* Navigation Links */}
+              <div className="mt-6 flex items-center justify-center gap-4 text-sm">
+                <button
+                  onClick={() => {
+                    logButtonClick('register_link', 'user_login_form');
+                    logNavigation('/register');
+                    navigate('/register');
+                  }}
+                  className="text-blue-400 hover:text-blue-300 transition"
+                >
+                  Create Account
+                </button>
+                <span className="text-white/40">•</span>
+                <button
+                  onClick={() => {
+                    logButtonClick('super_admin_link', 'user_login_form');
+                    logNavigation('/super-user-login');
+                    navigate('/super-user-login');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 transition"
+                >
+                  Admin Access
+                </button>
+              </div>
               <div className="mt-6 text-center space-y-2">
                 <button
-                  onClick={() => navigate('/register')}
-                  className="text-sm text-white/60 hover:text-white transition"
-                >
-                  New User? Register Here
-                </button>
-                <br />
-                <button
-                  onClick={() => navigate('/super-user-login')}
-                  className="text-sm text-white/60 hover:text-white transition"
-                >
-                  Admin Access →
-                </button>
-                <br />
-                <button
-                  onClick={() => navigate('/')}
+                  onClick={() => {
+                    logButtonClick('back_to_home', 'user_login_form');
+                    navigate('/');
+                  }}
                   className="text-sm text-white/60 hover:text-white transition"
                 >
                   ← Back to Home
